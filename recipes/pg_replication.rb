@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: nad-checks
-# Recipe:: psql_replication_delay
+# Recipe:: psql_replication
 #
 # Copyright 2013, Wanelo, Inc
 #
@@ -15,30 +15,36 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
 
 include_recipe "nad::default"
 
 nad_dir = '/opt/omni/etc/node-agent.d'
-master_ip = node["nad_checks"]["master"]["host"]
-master_user = node["nad_checks"]["master"]["user"]
-replica_ip = node["nad_checks"]["replica"]["host"]
-replica_user = node["nad_checks"]["replica"]["user"]
-path_additions = node["nad_checks"]["path_additions"]
+user = node["nad_checks"]["pg_replication"]["user"]
+path_additions = node["nad_checks"]["pg_replication"]["path_additions"]
 
 directory "#{nad_dir}/postgres" do
   mode '0755'
 end
 
-template "#{nad_dir}/postgres/pg_replication.sh" do
-  source "pg_replication.sh.erb"
-  cookbook "nad-checks"
-  mode 0755
-  variables "master" => master_ip,
-            "master_user" => master_user,
-            "replica" => replica_ip,
-            "replica_user" => replica_user,
-            "path_additions" => path_additions
+case node["nad_checks"]["pg_replication"]["pg_version"]
+  when "9.1"
+    template "#{nad_dir}/postgres/pg_replication.sh" do
+      source "postgres/9.1/pg_replication.sh.erb"
+      cookbook "nad-checks"
+      mode 0755
+      variables "master" => node["nad_checks"]["pg_replication"]["9_1"]["master"]["host"],
+                "replica" => node["nad_checks"]["pg_replication"]["9_1"]["replica"]["host"],
+                "user" => user,
+                "path_additions" => path_additions
+    end
+  when "9.2"
+    template "#{nad_dir}/postgres/pg_replication.sh" do
+      source "postgres/9.2/pg_replication.sh.erb"
+      cookbook "nad-checks"
+      mode 0755
+      variables "path_additions" => path_additions,
+                "user" => user
+    end
 end
 
 link "#{nad_dir}/pg_replication.sh" do

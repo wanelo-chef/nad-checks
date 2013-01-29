@@ -15,19 +15,17 @@ function _xlog_to_bytes {
 
 PATH=<%= [*@path_additions, "$PATH"].flatten.join(":") %>
 
+USER=<%= @user %>
 MASTER_HOST=<%= @master %>
-MASTER_USER=<%= @master_user %>
-
 REPLICA_HOST=<%= @replica %>
-REPLICA_USER=<%= @replica_user %>
 
 MASTER_SQL="SELECT pg_current_xlog_location()"
 REPLICA_SQL="SELECT pg_last_xlog_replay_location()"
 
-MASTER_XLOG=$(psql -U $MASTER_USER -Atc "$MASTER_SQL" -h $MASTER_HOST)
+MASTER_XLOG=$(psql -U $USER -Atc "$MASTER_SQL" -h $MASTER_HOST)
 _check_errors $? "Failed to get xlog location from master $MASTER_HOST"
 
-REPLICA_XLOG=$(psql -U $MASTER_USER -Atc "$REPLICA_SQL" -h $REPLICA_HOST)
+REPLICA_XLOG=$(psql -U $USER -Atc "$REPLICA_SQL" -h $REPLICA_HOST)
 _check_errors $? "Failed to get xlog location from replica $REPLICA_HOST"
 
 byte_diff=$(($(_xlog_to_bytes $MASTER_XLOG) - $(_xlog_to_bytes $REPLICA_XLOG)))
