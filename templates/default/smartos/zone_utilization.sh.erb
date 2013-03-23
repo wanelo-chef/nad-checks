@@ -1,0 +1,12 @@
+#!/bin/bash
+
+cpu_usage=`prctl -P -n zone.cpu-cap -i zone $(zonename) | grep usage | awk '{print $3}'`
+hard_usage_cap=`prctl -P -n zone.cpu-cap -i zone $(zonename) | grep privileged | awk '{print $3}'`
+system_cpu_share_max=`prctl -P -n zone.cpu-shares -i zone $(zonename) | grep system | awk '{print $3}'`
+zone_cpu_share_alloc=`prctl -P -n zone.cpu-shares -i zone $(zonename) | grep privileged | awk '{print $3}'`
+cpu_count=`psrinfo | wc -l`
+reserved_cpu_cores=`echo "$zone_cpu_share_alloc / $system_cpu_share_max * $cpu_count" | bc -l`
+
+echo "unix:0:zone:cpu_usage  L  $cpu_usage"
+echo "unix:0:zone:hard_usage_cap  L  $hard_usage_cap"
+echo "unix:0:zone:reserved_cpu_cores  L  $reserved_cpu_cores"
