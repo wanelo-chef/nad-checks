@@ -24,7 +24,7 @@
 
 include_recipe "nad::default"
 
-nad_dir = '/opt/omni/etc/node-agent.d'
+nad_dir = '/opt/circonus/etc/node-agent.d'
 
 directory "#{nad_dir}/vfs" do
   mode '0755'

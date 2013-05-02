@@ -18,7 +18,7 @@
 
 include_recipe "nad::default"
 
-nad_dir = '/opt/omni/etc/node-agent.d'
+nad_dir = '/opt/circonus/etc/node-agent.d'
 path_additions = node["nad_checks"]["git_revision"]["path_additions"]
 
 directory "#{nad_dir}/git" do

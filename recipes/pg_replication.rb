@@ -18,7 +18,7 @@
 
 include_recipe "nad::default"
 
-nad_dir = '/opt/omni/etc/node-agent.d'
+nad_dir = '/opt/circonus/etc/node-agent.d'
 user = node["nad_checks"]["pg_replication"]["user"]
 path_additions = node["nad_checks"]["pg_replication"]["path_additions"]
 
