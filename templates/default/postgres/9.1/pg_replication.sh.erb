@@ -13,7 +13,7 @@ function _xlog_to_bytes {
 	echo $((0xFFFFFF * 0x$logid + 0x$offset))
 }
 
-PATH=<%= [*@path_additions, "$PATH"].flatten.join(":") %>
+PATH=<%= [*@path_additions, '$PATH'].flatten.join(':') %>
 
 USER=<%= @user %>
 MASTER_HOST=<%= @master %>

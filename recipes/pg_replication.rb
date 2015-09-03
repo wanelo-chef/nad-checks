@@ -16,34 +16,34 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include_recipe "nad::default"
+include_recipe 'nad::default'
 
 nad_dir = '/opt/circonus/etc/node-agent.d'
-user = node["nad_checks"]["pg_replication"]["user"]
-path_additions = node["nad_checks"]["pg_replication"]["path_additions"]
+user = node['nad_checks']['pg_replication']['user']
+path_additions = node['nad_checks']['pg_replication']['path_additions']
 
 directory "#{nad_dir}/postgres" do
   mode '0755'
 end
 
-case node["nad_checks"]["pg_replication"]["pg_version"]
-  when "9.1"
+case node['nad_checks']['pg_replication']['pg_version']
+  when '9.1'
     template "#{nad_dir}/postgres/pg_replication.sh" do
-      source "postgres/9.1/pg_replication.sh.erb"
-      cookbook "nad-checks"
+      source 'postgres/9.1/pg_replication.sh.erb'
+      cookbook 'nad-checks'
       mode 0755
-      variables "master" => node["nad_checks"]["pg_replication"]["9_1"]["master"]["host"],
-                "replica" => node["nad_checks"]["pg_replication"]["9_1"]["replica"]["host"],
-                "user" => user,
-                "path_additions" => path_additions
+      variables 'master' => node['nad_checks']['pg_replication']['9_1']['master']['host'],
+                'replica' => node['nad_checks']['pg_replication']['9_1']['replica']['host'],
+                'user' => user,
+                'path_additions' => path_additions
     end
-  when "9.2"
+  when '9.2'
     template "#{nad_dir}/postgres/pg_replication.sh" do
-      source "postgres/9.2/pg_replication.sh.erb"
-      cookbook "nad-checks"
+      source 'postgres/9.2/pg_replication.sh.erb'
+      cookbook 'nad-checks'
       mode 0755
-      variables "path_additions" => path_additions,
-                "user" => user
+      variables 'path_additions' => path_additions,
+                'user' => user
     end
 end
 

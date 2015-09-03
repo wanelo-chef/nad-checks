@@ -16,21 +16,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include_recipe "nad::default"
+include_recipe 'nad::default'
 
 nad_dir = '/opt/circonus/etc/node-agent.d'
-path_additions = node["nad_checks"]["git_revision"]["path_additions"]
+path_additions = node['nad_checks']['git_revision']['path_additions']
 
 directory "#{nad_dir}/git" do
   mode '0755'
 end
 
 template "#{nad_dir}/git/git_revision.sh" do
-  source "git-revision/git_revision.sh.erb"
-  cookbook "nad-checks"
+  source 'git-revision/git_revision.sh.erb'
+  cookbook 'nad-checks'
   mode 0755
-  variables "path_additions" => path_additions,
-            "projects" => node["nad_checks"]["git_revision"]["projects"]
+  variables 'path_additions' => path_additions,
+            'projects' => node['nad_checks']['git_revision']['projects']
 end
 
 link "#{nad_dir}/git_revision.sh" do

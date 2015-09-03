@@ -1,11 +1,11 @@
 #!/bin/bash
 
-PATH=<%= [*@path_additions, "$PATH"].flatten.join(":") %>
+PATH=<%= [*@path_additions, '$PATH'].flatten.join(':') %>
 
 <% @projects.each do |project| %>
 
-cd <%= project["directory"] %>
+cd <%= project['directory'] %>
 REVISION=`git rev-parse HEAD`
-echo -e "git:<%= project["name"] %>:revision:hash\ts\t$REVISION"
+echo -e "git:<%= project['name'] %>:revision:hash\ts\t$REVISION"
 
 <% end %>

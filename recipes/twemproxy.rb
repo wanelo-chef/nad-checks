@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include_recipe "nad::default"
+include_recipe 'nad::default'
 
 nad_dir = '/opt/circonus/etc/node-agent.d'
 
@@ -25,8 +25,8 @@ directory "#{nad_dir}/twemproxy" do
 end
 
 template "#{nad_dir}/twemproxy/twemproxy.sh" do
-  source "twemproxy/twemproxy.sh.erb"
-  cookbook "nad-checks"
+  source 'twemproxy/twemproxy.sh.erb'
+  cookbook 'nad-checks'
   mode 0755
 end
 

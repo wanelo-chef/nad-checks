@@ -22,7 +22,7 @@
 # It makes consistent tracking very difficult, however, so this script
 # changes the instance number to 'all'.
 
-include_recipe "nad::default"
+include_recipe 'nad::default'
 
 nad_dir = '/opt/circonus/etc/node-agent.d'
 
@@ -31,8 +31,8 @@ directory "#{nad_dir}/vfs" do
 end
 
 template "#{nad_dir}/vfs/vfs.sh" do
-  source "vfs/vfs.sh.erb"
-  cookbook "nad-checks"
+  source 'vfs/vfs.sh.erb'
+  cookbook 'nad-checks'
   mode 0755
 end
 
