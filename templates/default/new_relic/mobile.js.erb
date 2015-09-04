@@ -1,0 +1,209 @@
+/*
+ *
+ *  Configure by writing a JSON file into /etc/nad-checks/new_relic_mobile.json
+ *  with the following format:
+ *
+ *    {
+ *      "apiKey": "XXXXXXXXXXXX",
+ *      "applications": {
+ *        "name": {
+ *          "id": "1234567",
+ *          "metrics": [
+ *            "metricName",
+ *            "metricName"
+ *          ]
+ *        }
+ *      }
+ *    }
+ *
+ *  For example:
+ *
+ *    {
+ *      "apiKey": "XXXXXXXXXXXX",
+ *      "applications": {
+ *        "android": {
+ *          "id": "1234567",
+ *          "metrics": [
+ *            "Network/Outbound/StatusCodeRate/500",
+ *            "Network/Outbound/StatusCodeRate/502",
+ *            "Network/Outbound/StatusCodeRate/503",
+ *            "Network/Outbound/StatusCodeRate/504",
+ *            "Network/Outbound/StatusCodeRate/505",
+ *            "Network/Outbound/StatusCodeRate/515"
+ *          ]
+ *        }
+ *      }
+ *    }
+ *
+ */
+
+var https = require('https'),
+    fs = require('fs'),
+    querystring = require('querystring'),
+    util = require('util');
+
+var configPath = '/etc/nad-checks/new_relic_mobile.json';
+
+/*
+  newRelicApplication
+  *********************************************************************
+ */
+
+newRelicApplication = function(apiKey, name, applicationId, metrics) {
+  this.apiKey = apiKey;
+  this.name = name;
+  this.applicationId = applicationId;
+  this.metrics = metrics;
+  this.body = '';
+  this.finished = false;
+};
+
+newRelicApplication.prototype.read = function() {
+  var self = this;
+  var req = https.request(this.httpOptions(), function(res) {
+    res.on('data', function(chunk) {
+      self.body += chunk;
+    });
+
+    res.on('end', function() {
+      self.finished = true;
+    });
+  });
+
+  req.end();
+};
+
+newRelicApplication.prototype.httpOptions = function() {
+  return {
+    headers: {
+      'X-Api-Key': this.apiKey
+    },
+    host: 'api.newrelic.com',
+    method: 'GET',
+    port: 443,
+    path: this.path() + '?' + this.queryString()
+  }
+};
+
+newRelicApplication.prototype.path = function() {
+  return '/v2/mobile_applications/' + this.applicationId + '/metrics/data.json'
+};
+
+newRelicApplication.prototype.minutesAgo = function(minutes) {
+  var now = new Date();
+  now.setMinutes(now.getMinutes() - minutes);
+  return now.toJSON();
+};
+
+newRelicApplication.prototype.queryString = function() {
+  var params = {
+    from: this.minutesAgo(7),
+    to: this.minutesAgo(6),
+    'names[]': this.metrics,
+    summarize: true
+  };
+
+  return querystring.stringify(params);
+};
+
+
+/*
+  reporter
+  *********************************************************************
+ */
+
+reporter = function() {
+  this.config = {};
+  this.data = {};
+  this.applications = [];
+  this.appCount = 0;
+
+  this.callback = null;
+  this.d = null;
+
+  this.loadConfig();
+};
+
+reporter.prototype.loadConfig = function() {
+  try {
+    var c = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    this.config = c;
+  } catch(e) {}
+};
+
+reporter.prototype.read = function() {
+  if(!this.config['apiKey'] || !this.config['applications']) {
+    this.callback(this.d, {}, this.instance);
+    this.d.running = false;
+    return;
+  }
+
+  var app;
+  var apps = Object.keys(this.config.applications);
+  this.appCount = apps.length;
+
+  for(var i = 0; i < this.appCount; i++) {
+    var applicationName = apps[i];
+    var applicationId = this.config.applications[applicationName].id;
+    var metrics = this.config.applications[applicationName].metrics;
+
+    app = new newRelicApplication(this.config.apiKey, applicationName, applicationId, metrics);
+    this.applications[i] = app;
+    app.read();
+  }
+
+  this.checkStatus();
+};
+
+reporter.prototype.checkStatus = function() {
+  var self = this;
+  var finishedCount = 0;
+
+  for(var i = 0; i < this.applications.length; i++) {
+    if(this.applications[i].finished)
+      finishedCount++;
+  }
+
+  if(finishedCount == this.appCount) {
+    this.finish();
+  } else {
+    setTimeout(function() { self.checkStatus() }, 100);
+  }
+};
+
+reporter.prototype.finish = function() {
+  this.data = {};
+
+  for(var i = 0; i < this.applications.length; i++) {
+    var app = this.applications[i];
+    var metrics = JSON.parse(app.body);
+    var metricData = metrics.metric_data.metrics;
+
+    this.data[app.name] = {};
+
+    for(var j = 0; j < metricData.length; j++) {
+      var name = metricData[j].name;
+      var values = metricData[j].timeslices[0].values;
+
+      this.data[app.name][name] = {
+        call_count: values.call_count
+      };
+    }
+  }
+
+  this.callback(this.d, this.data, this.instance);
+  this.d.running = false;
+};
+
+reporter.prototype.run = function(d, cb, req, args, instance) {
+  this.callback = cb;
+  this.d = d;
+  this.instance = instance;
+  this.read();
+};
+
+/*
+  *********************************************************************
+ */
+
+module.exports = reporter;
