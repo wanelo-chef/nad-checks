@@ -1,5 +1,7 @@
 default['nad_checks'] = {}
 
+default['nad_checks']['configuration_dir'] = '/etc/nad-checks'
+
 # Postgres replication checks
 #
 default['nad_checks']['pg_replication'] = {}
