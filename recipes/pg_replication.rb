@@ -26,25 +26,26 @@ directory "#{nad_dir}/postgres" do
   mode '0755'
 end
 
-case node['nad_checks']['pg_replication']['pg_version']
-  when '9.1'
-    template "#{nad_dir}/postgres/pg_replication.sh" do
-      source 'postgres/9.1/pg_replication.sh.erb'
-      cookbook 'nad-checks'
-      mode 0755
-      variables 'master' => node['nad_checks']['pg_replication']['9_1']['master']['host'],
-                'replica' => node['nad_checks']['pg_replication']['9_1']['replica']['host'],
-                'user' => user,
-                'path_additions' => path_additions
-    end
-  when '9.2'
-    template "#{nad_dir}/postgres/pg_replication.sh" do
-      source 'postgres/9.2/pg_replication.sh.erb'
-      cookbook 'nad-checks'
-      mode 0755
-      variables 'path_additions' => path_additions,
-                'user' => user
-    end
+pg_version = node['nad_checks']['pg_replication']['pg_version'].split('.').join.to_i
+
+if pg_version > 91
+  template "#{nad_dir}/postgres/pg_replication.sh" do
+    source 'postgres/9.2/pg_replication.sh.erb'
+    cookbook 'nad-checks'
+    mode 0755
+    variables 'path_additions' => path_additions,
+              'user' => user
+  end
+else
+  template "#{nad_dir}/postgres/pg_replication.sh" do
+    source 'postgres/9.1/pg_replication.sh.erb'
+    cookbook 'nad-checks'
+    mode 0755
+    variables 'master' => node['nad_checks']['pg_replication']['9_1']['master']['host'],
+              'replica' => node['nad_checks']['pg_replication']['9_1']['replica']['host'],
+              'user' => user,
+              'path_additions' => path_additions
+  end
 end
 
 link "#{nad_dir}/pg_replication.sh" do
