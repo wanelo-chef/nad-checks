@@ -1,3 +1,30 @@
-#!/bin/bash
+#!/usr/bin/env node
 
-echo `nc localhost 22222`
+var net = require('net');
+
+var totalData = "";
+var clusters = ['pause', 'activity-feed-base62', 'notifications', 'daily-sale', 'my-feed'];
+var metrics = ['client_eof', 'client_err', 'server_ejects', 'fragments', 'client_connections', 'forward_error'];
+
+var client = new net.Socket();
+client.connect(22222, '127.0.0.1');
+
+client.on('data', function(data) {
+  totalData += data;
+});
+
+client.on('close', function() {
+  parsed = JSON.parse(totalData);
+  for (var i = 0, ilen = clusters.length; i < ilen; i++) {
+    cluster = clusters[i];
+
+    cluster_data = parsed[cluster];
+    for (var j = 0, jlen = metrics.length; j < jlen; j++) {
+      metric = metrics[j];
+      machine_readable_metric_name = "twemproxy:" + cluster + ":" + metric;
+      metric_type = "L";
+      metric_value = cluster_data[metric];
+      console.log([machine_readable_metric_name, metric_type, metric_value].join("\t"));
+    }
+  }
+});
